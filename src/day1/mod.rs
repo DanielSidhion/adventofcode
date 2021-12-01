@@ -1,26 +1,38 @@
 pub struct DepthIncrementScanner {
-    first_measurement : bool,
-    last_measurement : u32,
+    latest_measurements: Vec<u32>,
     pub num_increments : u32,
+    pub num_three_measurement_increments : u32,
 }
 
 impl DepthIncrementScanner {
     pub fn new() -> Self {
         Self {
-            first_measurement: true,
-            last_measurement: 0,
+            latest_measurements: Vec::new(),
             num_increments: 0,
+            num_three_measurement_increments: 0,
         }
     }
 
     pub fn on_new_result(&mut self, result : &str) {
         let measurement = result.parse().unwrap();
 
-        if !self.first_measurement && measurement > self.last_measurement {
-            self.num_increments += 1;
+        if let Some(last) = self.latest_measurements.last()
+        {
+            if measurement > *last {
+                self.num_increments += 1;
+            }
         }
 
-        self.last_measurement = measurement;
-        self.first_measurement = false;
+        if self.latest_measurements.len() == 3 {
+            let first = self.latest_measurements.remove(0);
+
+            // The other two elements are common to both 3-measurement windows, so we don't need to do anything with them.
+
+            if measurement > first {
+                self.num_three_measurement_increments += 1;
+            }
+        }
+
+        self.latest_measurements.push(measurement);
     }
 }

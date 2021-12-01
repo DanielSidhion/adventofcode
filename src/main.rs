@@ -23,6 +23,7 @@ fn main() -> io::Result<()> {
     }
 
     println!("{}", scanner.num_increments);
+    println!("{}", scanner.num_three_measurement_increments);
 
     Ok(())
 }
