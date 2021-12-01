@@ -1,0 +1,1 @@
+This is a repository with my solutions to 2021's [advent of code](https://adventofcode.com) puzzles. Currently written in Rust to keep my knowledge of the language somewhat fresh.
