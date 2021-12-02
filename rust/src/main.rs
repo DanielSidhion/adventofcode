@@ -22,6 +22,7 @@ fn main() -> io::Result<()> {
         submarine.on_new_result(cleaned_line);
     }
 
+    println!("{}", submarine.horizontal_position * submarine.first_part_depth);
     println!("{}", submarine.horizontal_position * submarine.depth);
 
     Ok(())

@@ -1,24 +1,37 @@
 pub struct Submarine {
-    pub horizontal_position : i32,
-    pub depth : i32,
+    pub first_part_depth : u32,
+    pub horizontal_position : u32,
+    pub depth : u32,
+    aim : u32,
 }
 
 impl Submarine {
     pub fn new() -> Self {
         Self {
             horizontal_position: 0,
+            first_part_depth: 0,
             depth: 0,
+            aim: 0,
         }
     }
 
     pub fn on_new_result(&mut self, result : &str) {
         let movement : Vec<&str> = result.split(" ").collect();
-        let amount : i32 = movement[1].parse().unwrap();
+        let amount : u32 = movement[1].parse().unwrap();
 
         match movement[0] {
-            "forward" => self.horizontal_position += amount,
-            "down" => self.depth += amount,
-            "up" => self.depth -= amount,
+            "forward" => {
+                self.horizontal_position += amount;
+                self.depth += self.aim * amount;
+            }
+            "down" => {
+                self.first_part_depth += amount;
+                self.aim += amount;
+            }
+            "up" => {
+                self.first_part_depth -= amount;
+                self.aim -= amount;
+            }
             _ => panic!("Unknown movement"),
         }
     }
