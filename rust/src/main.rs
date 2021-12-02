@@ -1,9 +1,9 @@
 use std::io;
 
-mod day1;
+mod day2;
 
 fn main() -> io::Result<()> {
-    let mut scanner = day1::DepthIncrementScanner::new();
+    let mut submarine = day2::Submarine::new();
 
     let stdin = io::stdin();
 
@@ -19,11 +19,10 @@ fn main() -> io::Result<()> {
             break;
         }
 
-        scanner.on_new_result(cleaned_line);
+        submarine.on_new_result(cleaned_line);
     }
 
-    println!("{}", scanner.num_increments);
-    println!("{}", scanner.num_three_measurement_increments);
+    println!("{}", submarine.horizontal_position * submarine.depth);
 
     Ok(())
 }
