@@ -1,6 +1,6 @@
-include("Day2.jl")
+include("Day3.jl")
 
-using .Day2
+using .Day3
 
 submarine = Submarine()
 
@@ -11,8 +11,9 @@ while (true)
         break
     end
 
-    on_action!(submarine, curr_line)
+    on_report!(submarine, curr_line)
 end
 
-print("$(submarine.first_part_depth * submarine.horizontal_position)\n")
-print("$(submarine.depth * submarine.horizontal_position)\n")
+power_consumption, life_support = compute_report(submarine)
+print("$(power_consumption)\n")
+print("$(life_support)\n")
