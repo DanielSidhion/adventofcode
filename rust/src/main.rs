@@ -22,7 +22,10 @@ fn main() -> io::Result<()> {
         submarine.on_new_result(cleaned_line);
     }
 
-    println!("{}", submarine.power_consumption());
+    let (power_consumption, life_support) = submarine.compute_report();
+
+    println!("{}", power_consumption);
+    println!("{}", life_support);
 
     Ok(())
 }
