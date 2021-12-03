@@ -9,11 +9,18 @@ impl Submarine {
         }
     }
 
-    pub fn on_new_result(&mut self, result : &str) {
+    pub fn on_input(&mut self, result : &str) {
         self.diagnostic_report.push(u32::from_str_radix(result, 2).unwrap());
     }
 
-    pub fn compute_report(&self) -> (u32, u32)
+    pub fn output(&self) {
+        let (power_consumption, life_support) = self.compute_report();
+
+        println!("Part 1: {}", power_consumption);
+        println!("Part 2: {}", life_support);
+    }
+
+    fn compute_report(&self) -> (u32, u32)
     {
         let mut gamma = 0;
 

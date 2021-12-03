@@ -15,7 +15,7 @@ impl Submarine {
         }
     }
 
-    pub fn on_new_result(&mut self, result : &str) {
+    pub fn on_input(&mut self, result : &str) {
         let movement : Vec<&str> = result.split(" ").collect();
         let amount : u32 = movement[1].parse().unwrap();
 
@@ -34,5 +34,10 @@ impl Submarine {
             }
             _ => panic!("Unknown movement"),
         }
+    }
+
+    pub fn output(&self) {
+        println!("Part 1: {}", self.horizontal_position * self.first_part_depth);
+        println!("Part 2: {}", self.horizontal_position * self.depth);
     }
 }

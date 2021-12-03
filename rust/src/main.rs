@@ -19,13 +19,10 @@ fn main() -> io::Result<()> {
             break;
         }
 
-        submarine.on_new_result(cleaned_line);
+        submarine.on_input(cleaned_line);
     }
 
-    let (power_consumption, life_support) = submarine.compute_report();
-
-    println!("{}", power_consumption);
-    println!("{}", life_support);
+    submarine.output();
 
     Ok(())
 }
