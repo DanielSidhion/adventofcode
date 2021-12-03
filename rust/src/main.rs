@@ -1,9 +1,9 @@
 use std::io;
 
-mod day2;
+mod day3;
 
 fn main() -> io::Result<()> {
-    let mut submarine = day2::Submarine::new();
+    let mut submarine = day3::Submarine::new();
 
     let stdin = io::stdin();
 
@@ -22,8 +22,7 @@ fn main() -> io::Result<()> {
         submarine.on_new_result(cleaned_line);
     }
 
-    println!("{}", submarine.horizontal_position * submarine.first_part_depth);
-    println!("{}", submarine.horizontal_position * submarine.depth);
+    println!("{}", submarine.power_consumption());
 
     Ok(())
 }
