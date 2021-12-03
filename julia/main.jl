@@ -11,9 +11,7 @@ while (true)
         break
     end
 
-    on_report!(submarine, curr_line)
+    on_input!(submarine, curr_line)
 end
 
-power_consumption, life_support = compute_report(submarine)
-print("$(power_consumption)\n")
-print("$(life_support)\n")
+output(submarine)

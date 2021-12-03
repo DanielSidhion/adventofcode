@@ -1,14 +1,16 @@
 module Day1
 
-export DepthIncrementScanner, add_measurement!
+export Submarine, on_input!, output
 
-mutable struct DepthIncrementScanner
+mutable struct Submarine
     latest_measurements::Vector{UInt32}
     num_increments::UInt32
     num_three_measurement_increments::UInt32
+
+    Submarine() = new([], 0, 0)
 end
 
-function add_measurement!(s::DepthIncrementScanner, m::AbstractString)
+function on_input!(s::Submarine, m::AbstractString)
     m = parse(UInt32, m)
 
     if length(s.latest_measurements) > 0
@@ -26,6 +28,11 @@ function add_measurement!(s::DepthIncrementScanner, m::AbstractString)
     end
 
     push!(s.latest_measurements, m)
+end
+
+function output(s::Submarine)
+    println("Part 1: $(s.num_increments)")
+    println("Part 2: $(s.num_three_measurement_increments)")
 end
 
 end

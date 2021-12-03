@@ -1,6 +1,6 @@
 module Day3
 
-export Submarine, on_report!, compute_report
+export Submarine, on_input!, output
 
 mutable struct Submarine
     diagnostic_report::Vector{UInt32}
@@ -8,7 +8,7 @@ mutable struct Submarine
     Submarine() = new([])
 end
 
-function on_report!(s::Submarine, a::AbstractString)
+function on_input!(s::Submarine, a::AbstractString)
     num = parse(UInt32, a; base=2)
 
     push!(s.diagnostic_report, num)
@@ -52,6 +52,12 @@ end
 
 function most_popular_digit(nums::Vector{<:Unsigned}, digit_position::Integer)::Bool
     reduce(add_digit_to_tally(digit_position), nums; init = 0) >= 0
+end
+
+function output(s::Submarine)
+    power_consumption, life_support = compute_report(s)
+    println("Part 1: $(power_consumption)")
+    println("Part 2: $(life_support)")
 end
 
 end
