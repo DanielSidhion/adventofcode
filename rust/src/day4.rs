@@ -1,4 +1,3 @@
-#[derive(Clone)]
 struct BingoBoard {
     // Negative number means it's marked.
     pub numbers: Vec<i32>,
@@ -41,7 +40,7 @@ impl BingoBoard {
 
 pub struct Submarine {
     input_read_state: InputReadState,
-    current_read_board: BingoBoard,
+    current_read_board: Option<BingoBoard>,
 
     chosen_bingo_numers: Vec<i32>,
     bingo_boards: Vec<BingoBoard>,
@@ -56,7 +55,7 @@ impl Submarine {
     pub fn new() -> Self {
         Self {
             input_read_state: InputReadState::ReadingChosenNumbers,
-            current_read_board: BingoBoard::new(),
+            current_read_board: None,
 
             chosen_bingo_numers: Vec::new(),
             bingo_boards: Vec::new(),
@@ -68,23 +67,24 @@ impl Submarine {
             InputReadState::ReadingChosenNumbers => {
                 if result.is_empty() {
                     self.input_read_state = InputReadState::ReadingBoards;
+                    self.current_read_board = Some(BingoBoard::new());
                 } else {
                     self.chosen_bingo_numers = result.split(",").map(|x| x.parse().unwrap()).collect();
                 }
             }
             InputReadState::ReadingBoards => {
                 if result.is_empty() {
-                    self.bingo_boards.push(self.current_read_board.clone());
-                    self.current_read_board = BingoBoard::new();
+                    self.bingo_boards.push(self.current_read_board.take().unwrap());
+                    self.current_read_board = Some(BingoBoard::new());
                 } else {
-                    self.current_read_board.numbers.extend(result.split(" ").filter(|x| !x.is_empty()).map(|x| x.parse::<i32>().unwrap()));
+                    self.current_read_board.as_mut().unwrap().numbers.extend(result.split(" ").filter(|x| !x.is_empty()).map(|x| x.parse::<i32>().unwrap()));
                 }
             }
         }
     }
 
-    pub fn output(&mut self) {
-        let mut last_board_to_win = None;
+    pub fn output(mut self) {
+        let mut last_board_score = 0;
         let mut first_board_score = 0;
 
         for num in self.chosen_bingo_numers.iter() {
@@ -96,15 +96,18 @@ impl Submarine {
                         first_board_score = board.win_score;
                     }
 
-                    last_board_to_win = Some(board.clone());
+                    if self.bingo_boards.len() == 1 {
+                        last_board_score = board.win_score;
+                        break;
+                    }
                 },
                 None => {}
             };
 
-            self.bingo_boards = self.bingo_boards.clone().into_iter().filter(|b| !b.won).collect();
+            self.bingo_boards = self.bingo_boards.into_iter().filter(|b| !b.won).collect();
         }
 
         println!("Part 1: {}", first_board_score);
-        println!("Part 2: {}", last_board_to_win.unwrap().win_score);
+        println!("Part 2: {}", last_board_score);
     }
 }
