@@ -33,6 +33,7 @@ impl BingoBoard {
             if row_win || column_win {
                 self.won = true;
                 self.win_score = number * self.numbers.iter().filter(|&&x| x > 0).sum::<i32>();
+                // println!("Board won! Win score: {}", self.win_score);
             }
         }
     }
@@ -83,18 +84,27 @@ impl Submarine {
     }
 
     pub fn output(&mut self) {
+        let mut last_board_to_win = None;
+        let mut first_board_score = 0;
+
         for num in self.chosen_bingo_numers.iter() {
             self.bingo_boards.iter_mut().for_each(|b| b.mark(*num));
 
-            let win_score = match self.bingo_boards.iter().find(|b| b.won) {
-                Some(board) => board.win_score,
-                None => 0,
+            match self.bingo_boards.iter().find(|b| b.won) {
+                Some(board) => {
+                    if first_board_score == 0 {
+                        first_board_score = board.win_score;
+                    }
+
+                    last_board_to_win = Some(board.clone());
+                },
+                None => {}
             };
 
-            if win_score > 0 {
-                println!("Part 1: {}", win_score);
-                break;
-            }
+            self.bingo_boards = self.bingo_boards.clone().into_iter().filter(|b| !b.won).collect();
         }
+
+        println!("Part 1: {}", first_board_score);
+        println!("Part 2: {}", last_board_to_win.unwrap().win_score);
     }
 }
