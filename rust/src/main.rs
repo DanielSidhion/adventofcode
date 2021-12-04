@@ -1,9 +1,9 @@
 use std::io;
 
-mod day3;
+mod day4;
 
 fn main() -> io::Result<()> {
-    let mut submarine = day3::Submarine::new();
+    let mut submarine = day4::Submarine::new();
 
     let stdin = io::stdin();
 
@@ -11,15 +11,13 @@ fn main() -> io::Result<()> {
 
     loop {
         curr_line.clear();
-        stdin.read_line(&mut curr_line)?;
+        let read_result = stdin.read_line(&mut curr_line);
 
-        let cleaned_line = curr_line.trim();
-
-        if cleaned_line.is_empty() {
+        if let Ok(0) = read_result {
             break;
         }
 
-        submarine.on_input(cleaned_line);
+        submarine.on_input(curr_line.trim());
     }
 
     submarine.output();
