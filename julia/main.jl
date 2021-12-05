@@ -1,15 +1,15 @@
-include("Day4.jl")
+include("Day5.jl")
 
-using .Day4
+using .Day5
 
 submarine = Submarine()
 
 while (true)
-    curr_line = readline()
-
     if eof(stdin)
         break
     end
+
+    curr_line = readline()
 
     on_input!(submarine, curr_line)
 end
