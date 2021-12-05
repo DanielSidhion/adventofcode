@@ -43,7 +43,7 @@ end
 
 function build_range(a::Integer, b::Integer)
     if a > b
-        Iterators.reverse(b:a)
+        a:-1:b
     else
         a:b
     end
