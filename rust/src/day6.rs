@@ -35,6 +35,13 @@ impl Submarine {
 
         let total_fish_after_80_days: u64 = self.fish_timers.iter().sum();
 
+        for _ in 0..(256-80) {
+            self.simulate_one_day();
+        }
+
+        let total_fish_after_256_days: u64 = self.fish_timers.iter().sum();
+
         println!("Part 1: {}", total_fish_after_80_days);
+        println!("Part 2: {}", total_fish_after_256_days);
     }
 }
