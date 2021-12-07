@@ -31,35 +31,30 @@ impl Submarine {
             });
     }
 
-    fn min_assumed_fuel_for_positioning(&self) -> i32 {
+    fn min_required_fuel_for_calculation(&self, calculation: impl Fn(i32, (&i32, &i32)) -> i32) -> i32 {
         (self.min_crab_position..=self.max_crab_position)
-            .map(|currpos| {
-                self.crab_positions.iter().fold(0, |fuel, (pos, num_crabs)| fuel + (currpos - pos).abs() * num_crabs)
-            })
-            .min()
-            .unwrap()
-    }
-
-    fn min_real_fuel_for_positioning(&self) -> i32 {
-        (self.min_crab_position..=self.max_crab_position)
-            .map(|currpos| {
-                self.crab_positions.iter().fold(0, |fuel, (pos, num_crabs)| fuel + fuel_for_pos_difference(currpos - pos) * num_crabs)
+            .map(|curr_pos| {
+                self.crab_positions.iter().map(|entry| calculation(curr_pos, entry)).sum()
             })
             .min()
             .unwrap()
     }
 
     pub fn output(&mut self) {
-        let min_assumed_fuel = self.min_assumed_fuel_for_positioning();
-        let min_real_fuel = self.min_real_fuel_for_positioning();
+        let min_assumed_fuel = self.min_required_fuel_for_calculation(assumed_fuel_for_crab_pos);
+        let min_real_fuel = self.min_required_fuel_for_calculation(real_fuel_for_crab_pos);
 
         println!("Part 1: {}", min_assumed_fuel);
         println!("Part 2: {}", min_real_fuel);
     }
 }
 
-fn fuel_for_pos_difference(mut pos_difference: i32) -> i32 {
-    pos_difference = pos_difference.abs();
+fn assumed_fuel_for_crab_pos(curr_pos: i32, (&crab_pos, &num_crabs): (&i32, &i32)) -> i32 {
+    (curr_pos - crab_pos).abs() * num_crabs
+}
 
-    (pos_difference * (pos_difference + 1)) / 2
+fn real_fuel_for_crab_pos(curr_pos: i32, (&crab_pos, &num_crabs): (&i32, &i32)) -> i32 {
+    let diff = (curr_pos - crab_pos).abs();
+
+    num_crabs * (diff * (diff + 1)) / 2
 }
