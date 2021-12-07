@@ -65,8 +65,8 @@ impl Submarine {
 // Output is a Vec<i32> to make both branches of the function body return the same type.
 fn build_inclusive_range(a: i32, b: i32) -> Vec<i32> {
     if a > b {
-        (b..(a + 1)).rev().collect()
+        (b..=a).rev().collect()
     } else {
-        (a..(b + 1)).collect()
+        (a..=b).collect()
     }
 }
