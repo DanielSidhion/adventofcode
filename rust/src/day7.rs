@@ -1,60 +1,45 @@
-use std::collections::HashMap;
-
 pub struct Submarine {
-    crab_positions: HashMap<i32, i32>,
-    min_crab_position: i32,
-    max_crab_position: i32,
+    crab_positions: Vec<i32>,
 }
 
 impl Submarine {
     pub fn new() -> Self {
         Self {
-            crab_positions: HashMap::new(),
-            min_crab_position: i32::MAX,
-            max_crab_position: 0,
+            crab_positions: Vec::new(),
         }
     }
 
     pub fn on_input(&mut self, result: &str) {
-        result.split(",")
-            .map(|x| x.parse().unwrap())
-            .for_each(|x: i32| {
-                if x < self.min_crab_position {
-                    self.min_crab_position = x;
-                }
-
-                if x > self.max_crab_position {
-                    self.max_crab_position = x;
-                }
-
-                *self.crab_positions.entry(x).or_default() += 1;
-            });
+        self.crab_positions = result.split(",").map(|x| x.parse().unwrap()).collect();
+        // Needed for part 1.
+        self.crab_positions.sort_unstable();
     }
 
-    fn min_required_fuel_for_calculation(&self, calculation: impl Fn(i32, (&i32, &i32)) -> i32) -> i32 {
-        (self.min_crab_position..=self.max_crab_position)
-            .map(|curr_pos| {
-                self.crab_positions.iter().map(|entry| calculation(curr_pos, entry)).sum()
-            })
-            .min()
-            .unwrap()
+    fn min_assumed_fuel(&self) -> i32 {
+        let optimal_position = self.crab_positions[self.crab_positions.len() / 2];
+
+        self.crab_positions.iter().map(|entry| (optimal_position - entry).abs()).sum()
+    }
+
+    fn min_real_fuel(&self) -> i32 {
+        let mean = self.crab_positions.iter().sum::<i32>() / self.crab_positions.len() as i32;
+
+        // The optimal position is guaranteed to be within (-0.5, 0.5) of the mean, so to be safe we'll check the 3 values around the mean.
+        ((mean - 1)..=(mean + 1)).map(|pos| self.real_fuel_for_pos(pos)).min().unwrap()
+    }
+
+    fn real_fuel_for_pos(&self, pos: i32) -> i32 {
+        self.crab_positions.iter().map(|entry| {
+            let diff = (entry - pos).abs();
+            (diff * (diff + 1)) / 2
+        }).sum()
     }
 
     pub fn output(&mut self) {
-        let min_assumed_fuel = self.min_required_fuel_for_calculation(assumed_fuel_for_crab_pos);
-        let min_real_fuel = self.min_required_fuel_for_calculation(real_fuel_for_crab_pos);
+        let min_assumed_fuel = self.min_assumed_fuel();
+        let min_real_fuel = self.min_real_fuel();
 
         println!("Part 1: {}", min_assumed_fuel);
         println!("Part 2: {}", min_real_fuel);
     }
-}
-
-fn assumed_fuel_for_crab_pos(curr_pos: i32, (&crab_pos, &num_crabs): (&i32, &i32)) -> i32 {
-    (curr_pos - crab_pos).abs() * num_crabs
-}
-
-fn real_fuel_for_crab_pos(curr_pos: i32, (&crab_pos, &num_crabs): (&i32, &i32)) -> i32 {
-    let diff = (curr_pos - crab_pos).abs();
-
-    num_crabs * (diff * (diff + 1)) / 2
 }
