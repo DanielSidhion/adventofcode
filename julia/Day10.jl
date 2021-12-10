@@ -63,7 +63,7 @@ end
 function output(s::Submarine)
     println("Part 1: $(s.syntax_error_score)")
 
-    median_score::UInt64 = Statistics.median(filter(!iszero, s.autocomplete_scores))
+    median_score::UInt64 = Statistics.median(s.autocomplete_scores)
 
     println("Part 2: $(median_score)")
 end
