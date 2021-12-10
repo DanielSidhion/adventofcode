@@ -1,14 +1,15 @@
 pub struct Submarine {
-    syntax_error_score: u32,
+    syntax_error_score: u64,
+    autocomplete_scores: Vec<u64>,
 }
 
-fn is_opening_equivalent(c: char, o: char) -> bool {
-    match c {
-        ')' => o == '(',
-        ']' => o == '[',
-        '}' => o == '{',
-        '>' => o == '<',
-        _ => panic!("Invalid closing character!"),
+fn get_closing_equivalent(o: char) -> char {
+    match o {
+        '(' => ')',
+        '[' => ']',
+        '{' => '}',
+        '<' => '>',
+        _ => panic!("Invalid opening character!"),
     }
 }
 
@@ -26,7 +27,7 @@ fn apply_character_to_stack(v: Result<Vec<char>, char>, c: char) -> Result<Vec<c
                     Err(c)
                 },
                 Some(o) => {
-                    if is_opening_equivalent(c, o) {
+                    if get_closing_equivalent(o) == c {
                         Ok(uv)
                     } else {
                         Err(c)
@@ -41,7 +42,7 @@ fn apply_character_to_stack(v: Result<Vec<char>, char>, c: char) -> Result<Vec<c
     }
 }
 
-fn score_parsing_result(r: Result<Vec<char>, char>) -> u32 {
+fn calculate_syntax_error_score(r: &Result<Vec<char>, char>) -> u64 {
     match r {
         Ok(_) => 0,
         Err(c) => {
@@ -56,20 +57,47 @@ fn score_parsing_result(r: Result<Vec<char>, char>) -> u32 {
     }
 }
 
+fn calculate_autocomplete_score(r: Result<Vec<char>, char>) -> u64 {
+    match r {
+        Err(_) => 0,
+        Ok(v) => v.iter().rev().fold(0, |score, o| score * 5 + closing_character_score(*o)),
+    }
+}
+
+fn closing_character_score(o: char) -> u64 {
+    match get_closing_equivalent(o) {
+        ')' => 1,
+        ']' => 2,
+        '}' => 3,
+        '>' => 4,
+        _ => panic!("Invalid closing character!"),
+    }
+}
+
 impl Submarine {
     pub fn new() -> Self {
         Self {
             syntax_error_score: 0,
+            autocomplete_scores: Vec::new(),
         }
     }
 
     pub fn on_input(&mut self, result: &str) {
         let parsing_result = result.chars().fold(Ok(Vec::new()), apply_character_to_stack);
 
-        self.syntax_error_score += score_parsing_result(parsing_result);
+        self.syntax_error_score += calculate_syntax_error_score(&parsing_result);
+
+        let autocomplete_score = calculate_autocomplete_score(parsing_result);
+        if autocomplete_score > 0 {
+            self.autocomplete_scores.push(autocomplete_score);
+        }
     }
 
     pub fn output(&mut self) {
         println!("Part 1: {}", self.syntax_error_score);
+
+        self.autocomplete_scores.sort();
+
+        println!("Part 2: {}", self.autocomplete_scores[self.autocomplete_scores.len() / 2]);
     }
 }
