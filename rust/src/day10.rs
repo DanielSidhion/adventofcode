@@ -14,6 +14,7 @@ fn get_closing_equivalent(o: char) -> char {
 }
 
 fn apply_character_to_stack(v: Result<Vec<char>, char>, c: char) -> Result<Vec<char>, char> {
+    // Propagate unexpected character errors until the end.
     if let Err(_) = v {
         return v;
     }
@@ -21,19 +22,10 @@ fn apply_character_to_stack(v: Result<Vec<char>, char>, c: char) -> Result<Vec<c
     let mut uv = v.unwrap();
 
     match c {
-        ')' | ']' | '}' | '>' => {
-            match uv.pop() {
-                None => {
-                    Err(c)
-                },
-                Some(o) => {
-                    if get_closing_equivalent(o) == c {
-                        Ok(uv)
-                    } else {
-                        Err(c)
-                    }
-                }
-            }
+        ')' | ']' | '}' | '>' => match uv.pop() {
+            None => Err(c),
+            Some(o ) if get_closing_equivalent(o) == c => Ok(uv),
+            _ => Err(c),
         }
         _ => {
             uv.push(c);
@@ -45,14 +37,12 @@ fn apply_character_to_stack(v: Result<Vec<char>, char>, c: char) -> Result<Vec<c
 fn calculate_syntax_error_score(r: &Result<Vec<char>, char>) -> u64 {
     match r {
         Ok(_) => 0,
-        Err(c) => {
-            match c {
-                ')' => 3,
-                ']' => 57,
-                '}' => 1197,
-                '>' => 25137,
-                _ => panic!("Invalid unexpected character!"),
-            }
+        Err(c) => match c {
+            ')' => 3,
+            ']' => 57,
+            '}' => 1197,
+            '>' => 25137,
+            _ => panic!("Invalid unexpected character!"),
         }
     }
 }
@@ -86,16 +76,14 @@ impl Submarine {
         let parsing_result = result.chars().fold(Ok(Vec::new()), apply_character_to_stack);
 
         self.syntax_error_score += calculate_syntax_error_score(&parsing_result);
-
-        let autocomplete_score = calculate_autocomplete_score(parsing_result);
-        if autocomplete_score > 0 {
-            self.autocomplete_scores.push(autocomplete_score);
-        }
+        // This will add some 0 entries, but we'll take care of that in the output.
+        self.autocomplete_scores.push(calculate_autocomplete_score(parsing_result));
     }
 
     pub fn output(&mut self) {
         println!("Part 1: {}", self.syntax_error_score);
 
+        self.autocomplete_scores.retain(|x| *x > 0);
         self.autocomplete_scores.sort();
 
         println!("Part 2: {}", self.autocomplete_scores[self.autocomplete_scores.len() / 2]);
