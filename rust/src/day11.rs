@@ -37,8 +37,8 @@ impl Submarine {
     }
 
     fn simulate_step(&mut self) -> bool {
-        for x in 0..self.iwidth {
-            for y in 0..self.iheight {
+        for y in 0..self.iheight {
+            for x in 0..self.iwidth {
                 self.increase_energy_level(x, y);
             }
         }
@@ -46,8 +46,8 @@ impl Submarine {
         let mut all_flashed_this_turn = true;
 
         // Resetting any place that flashed.
-        for x in 0..self.width {
-            for y in 0..self.height {
+        for y in 0..self.height {
+            for x in 0..self.width {
                 if self.flashed[y][x] {
                     self.flashed[y][x] = false;
                     self.energy_levels[y][x] = 0;
@@ -80,8 +80,8 @@ impl Submarine {
         self.flashed[y as usize][x as usize] = true;
         self.total_flashes += 1;
 
-        for i in -1..=1 {
-            for j in -1..=1 {
+        for j in -1..=1 {
+            for i in -1..=1 {
                 self.increase_energy_level(x + i, y + j);
             }
         }
