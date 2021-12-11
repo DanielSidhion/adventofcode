@@ -36,12 +36,14 @@ impl Submarine {
         self.iheight += 1;
     }
 
-    fn simulate_step(&mut self) {
+    fn simulate_step(&mut self) -> bool {
         for x in 0..self.iwidth {
             for y in 0..self.iheight {
                 self.increase_energy_level(x, y);
             }
         }
+
+        let mut all_flashed_this_turn = true;
 
         // Resetting any place that flashed.
         for x in 0..self.width {
@@ -49,9 +51,13 @@ impl Submarine {
                 if self.flashed[y][x] {
                     self.flashed[y][x] = false;
                     self.energy_levels[y][x] = 0;
+                } else {
+                    all_flashed_this_turn = false;
                 }
             }
         }
+
+        all_flashed_this_turn
     }
 
     fn increase_energy_level(&mut self, x: i32, y: i32) {
@@ -82,10 +88,25 @@ impl Submarine {
     }
 
     pub fn output(&mut self) {
-        for _ in 0..100 {
-            self.simulate_step();
+        let mut i = 0;
+        let mut total_flashes_after_100_steps = 0;
+        let mut first_synchronized_flash = 0;
+
+        while total_flashes_after_100_steps == 0 || first_synchronized_flash == 0 {
+            i += 1;
+
+            let all_flashed = self.simulate_step();
+
+            if i == 100 {
+                total_flashes_after_100_steps = self.total_flashes;
+            }
+
+            if all_flashed {
+                first_synchronized_flash = i;
+            }
         }
 
-        println!("Part 1: {}", self.total_flashes);
+        println!("Part 1: {}", total_flashes_after_100_steps);
+        println!("Part 2: {}", first_synchronized_flash);
     }
 }
