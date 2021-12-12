@@ -54,21 +54,32 @@ impl Submarine {
         }
     }
 
-    fn find_total_valid_paths_from_to(&self, from: &str, to: &str) -> u32 {
+    fn find_total_valid_paths_from_to(&self, from: &str, to: &str, double_small_cave_allowed: bool) -> u32 {
         let from_index = self.cave_name_map[from];
         let to_index = self.cave_name_map[to];
 
-        self.dive(from_index, to_index, Vec::new())
+        self.dive(from_index, to_index, Vec::new(), double_small_cave_allowed, false, from_index)
     }
 
-    fn dive(&self, from_index: usize, to_index: usize, mut small_caves_visited: Vec<usize>) -> u32 {
+    fn dive(&self,
+        from_index: usize,
+        to_index: usize,
+        mut small_caves_visited: Vec<usize>,
+        double_small_cave_allowed: bool,
+        mut has_double_small_cave: bool,
+        start_index: usize
+    ) -> u32 {
         if from_index == to_index {
             return 1;
         }
 
         if !self.caves[from_index].is_big {
             if small_caves_visited.contains(&from_index) {
-                return 0;
+                if double_small_cave_allowed && !has_double_small_cave && from_index != start_index {
+                    has_double_small_cave = true;
+                } else {
+                    return 0;
+                }
             } else {
                 small_caves_visited.push(from_index);
             }
@@ -77,13 +88,21 @@ impl Submarine {
         let mut connections_from_here = 0;
 
         for connection in self.caves[from_index].connections.iter() {
-            connections_from_here += self.dive(*connection, to_index, small_caves_visited.clone());
+            connections_from_here += self.dive(
+                *connection,
+                to_index,
+                small_caves_visited.clone(),
+                double_small_cave_allowed,
+                has_double_small_cave,
+                start_index
+            );
         }
 
         connections_from_here
     }
 
     pub fn output(&mut self) {
-        println!("Part 1: {}", self.find_total_valid_paths_from_to("start", "end"));
+        println!("Part 1: {}", self.find_total_valid_paths_from_to("start", "end", false));
+        println!("Part 2: {}", self.find_total_valid_paths_from_to("start", "end", true));
     }
 }
