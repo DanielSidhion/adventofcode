@@ -1,6 +1,6 @@
-include("Day11.jl")
+include("Day12.jl")
 
-using .Day11
+using .Day12
 
 submarine = Submarine()
 
