@@ -6,7 +6,6 @@ enum InputReadState {
 pub struct Submarine {
     input_read_state: InputReadState,
     dots: Vec<(u32, u32)>,
-    num_folds: u32,
     num_points_after_first_fold: usize,
 }
 
@@ -15,7 +14,6 @@ impl Submarine {
         Self {
             input_read_state: InputReadState::ReadingDots,
             dots: Vec::new(),
-            num_folds: 0,
             num_points_after_first_fold: 0,
         }
     }
@@ -45,8 +43,6 @@ impl Submarine {
     }
 
     fn fold(&mut self, axis: &str, coord: u32) {
-        self.num_folds += 1;
-
         match axis {
             "x" => {
                 let points_beyond_fold_line = self.dots.iter().filter(|(x, _)| *x > coord);
@@ -67,7 +63,7 @@ impl Submarine {
         self.dots.sort_unstable_by_key(|(x, y)| (*y, *x));
         self.dots.dedup();
 
-        if self.num_folds == 1 {
+        if self.num_points_after_first_fold == 0 {
             self.num_points_after_first_fold = self.dots.len();
         }
     }
@@ -84,7 +80,7 @@ impl Submarine {
                     print!("#");
                     next_dot.next();
                 } else {
-                    print!(".");
+                    print!(" ");
                 }
             }
             println!("");
