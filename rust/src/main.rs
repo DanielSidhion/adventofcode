@@ -1,9 +1,9 @@
 use std::io;
 
-mod day12;
+mod day13;
 
 fn main() -> io::Result<()> {
-    let mut submarine = day12::Submarine::new();
+    let mut submarine = day13::Submarine::new();
 
     let stdin = io::stdin();
 
