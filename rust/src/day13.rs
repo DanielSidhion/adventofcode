@@ -7,6 +7,7 @@ pub struct Submarine {
     input_read_state: InputReadState,
     dots: Vec<(u32, u32)>,
     num_folds: u32,
+    num_points_after_first_fold: usize,
 }
 
 impl Submarine {
@@ -15,6 +16,7 @@ impl Submarine {
             input_read_state: InputReadState::ReadingDots,
             dots: Vec::new(),
             num_folds: 0,
+            num_points_after_first_fold: 0,
         }
     }
 
@@ -33,11 +35,6 @@ impl Submarine {
                 self.dots.push((x, y));
             }
             InputReadState::ReadingFoldInstructions => {
-                // Needed for part 1.
-                if self.num_folds == 1 {
-                    return;
-                }
-
                 let mut instructions = result.strip_prefix("fold along ").unwrap().split("=");
                 let axis = instructions.next().unwrap();
                 let coord: u32 = instructions.next().unwrap().parse().unwrap();
@@ -66,11 +63,37 @@ impl Submarine {
             _ => panic!("Got an invalid axis!")
         }
 
-        self.dots.sort_unstable();
+        // We always sort by y first because it'll be important later when we print the dots.
+        self.dots.sort_unstable_by_key(|(x, y)| (*y, *x));
         self.dots.dedup();
+
+        if self.num_folds == 1 {
+            self.num_points_after_first_fold = self.dots.len();
+        }
+    }
+
+    fn print_dots(&mut self) {
+        let max_x = *self.dots.iter().map(|(x, _)| x).max().unwrap();
+        let max_y = *self.dots.iter().map(|(_, y)| y).max().unwrap();
+
+        let mut next_dot = self.dots.iter().peekable();
+
+        for y in 0..=max_y {
+            for x in 0..=max_x {
+                if matches!(next_dot.peek(), Some(&&(nx, ny)) if nx == x && ny == y) {
+                    print!("#");
+                    next_dot.next();
+                } else {
+                    print!(".");
+                }
+            }
+            println!("");
+        }
     }
 
     pub fn output(&mut self) {
-        println!("Part 1: {}", self.dots.len());
+        println!("Part 1: {}", self.num_points_after_first_fold);
+        println!("Part 2:");
+        self.print_dots();
     }
 }
