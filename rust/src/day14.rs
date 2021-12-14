@@ -26,7 +26,7 @@ impl Submarine {
     pub fn on_input(&mut self, result: &str) {
         if self.polymer_template.is_empty() {
             self.polymer_template = result.to_string();
-            self.seed_frequencies(result);
+            self.seed_frequencies();
             return;
         }
 
@@ -50,8 +50,8 @@ impl Submarine {
         }
     }
 
-    fn seed_frequencies(&mut self, polymer_template: &str) {
-        let pairs = polymer_template.chars().zip(polymer_template.chars().skip(1)).map(tuple_chars_to_string);
+    fn seed_frequencies(&mut self) {
+        let pairs = self.polymer_template.chars().zip(self.polymer_template.chars().skip(1)).map(tuple_chars_to_string);
 
         for pair in pairs {
             *self.pair_frequencies.entry(pair).or_default() += 1;
