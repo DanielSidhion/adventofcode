@@ -1,9 +1,17 @@
 use std::collections::HashMap;
 
+fn two_chars_to_string(a: char, b: char) -> String {
+    vec![a, b].into_iter().collect()
+}
+
+fn tuple_chars_to_string((a, b): (char, char)) -> String {
+    two_chars_to_string(a, b)
+}
+
 pub struct Submarine {
     polymer_template: String,
-    insertion_templates: HashMap<String, char>,
-    element_frequency: HashMap<char, u32>,
+    insertion_templates: HashMap<String, Vec<String>>,
+    pair_frequencies: HashMap<String, u64>,
 }
 
 impl Submarine {
@@ -11,7 +19,7 @@ impl Submarine {
         Self {
             polymer_template: String::new(),
             insertion_templates: HashMap::new(),
-            element_frequency: HashMap::new(),
+            pair_frequencies: HashMap::new(),
         }
     }
 
@@ -29,35 +37,71 @@ impl Submarine {
         let pattern = insertion_parts.next().unwrap();
         let new_element = insertion_parts.next().unwrap().chars().next().unwrap();
 
-        self.insertion_templates.insert(pattern.to_string(), new_element);
+        self.add_insertion_templates(pattern, new_element);
+    }
+
+    fn add_insertion_templates(&mut self, pattern: &str, new_element: char) {
+        if let [a, b] = pattern.chars().collect::<Vec<char>>()[..] {
+            let first = two_chars_to_string(a, new_element);
+            let second = two_chars_to_string(new_element, b);
+
+            self.insertion_templates.insert(pattern.to_string(), vec![first, second]);
+        }
+    }
+
+    fn seed_frequencies(&mut self) {
+        let pairs = self.polymer_template.chars().zip(self.polymer_template.chars().skip(1)).map(tuple_chars_to_string);
+
+        for pair in pairs {
+            *self.pair_frequencies.entry(pair).or_default() += 1;
+        }
     }
 
     fn polymerize(&mut self) {
-        let new_polymer = self.polymer_template.chars()
-            .zip(self.polymer_template.chars().skip(1))
-            .flat_map(|(a, b)| {
-                if let Some(insertion) = self.insertion_templates.get(&format!("{}{}", a, b)) {
-                    return vec![a, *insertion];
-                }
+        let mut new_frequency_map = HashMap::new();
 
-                return vec![a];
-            })
-            .chain(self.polymer_template.chars().last())
-            .collect();
+        for (pair, frequency) in self.pair_frequencies.iter() {
+            let new_pairs = self.insertion_templates.get(pair)
+                .map(|x| x.iter().collect()) // We need the `map` to go from &Vec<String> to Vec<&String> so we can `unwrap_or_else()`.
+                .unwrap_or_else(|| vec![pair]); // If there's no insertion template, this pair must remain there.
 
-        self.polymer_template = new_polymer;
+            for new_pair in new_pairs.iter() {
+                *new_frequency_map.entry((*new_pair).to_owned()).or_default() += *frequency;
+            }
+        }
+
+        self.pair_frequencies = new_frequency_map;
     }
 
-    fn count_max_min_frequencies(&mut self) -> (u32, u32) {
-        self.polymer_template.chars().for_each(|c| *self.element_frequency.entry(c).or_default() += 1);
+    fn count_max_min_frequencies(&mut self) -> (u64, u64) {
+        let mut element_frequencies = HashMap::new();
 
-        let mut frequencies: Vec<u32> = self.element_frequency.values().cloned().collect();
+        // By counting every pair like this, we'll end up double-counting every element that isn't the first or last element of the final polymer.
+        for (pair, frequency) in self.pair_frequencies.iter() {
+            if let [a, b] = pair.chars().collect::<Vec<char>>()[..] {
+                *element_frequencies.entry(a).or_default() += *frequency;
+                *element_frequencies.entry(b).or_default() += *frequency;
+            }
+        }
+
+        // Adjusting the frequencies, making sure to keep the +1 for the starting and last elements.
+        element_frequencies.iter_mut().for_each(|(char, frequency)| {
+            if self.polymer_template.starts_with(*char) || self.polymer_template.ends_with(*char) {
+                *frequency += 1;
+            }
+
+            *frequency /= 2;
+        });
+
+        let mut frequencies: Vec<u64> = element_frequencies.values().cloned().collect();
         frequencies.sort_unstable_by(|a, b| b.cmp(a));
 
         (frequencies[0], *frequencies.last().unwrap())
     }
 
     pub fn output(&mut self) {
+        self.seed_frequencies();
+
         for _ in 0..10 {
             self.polymerize();
         }
@@ -65,5 +109,13 @@ impl Submarine {
         let (a, b) = self.count_max_min_frequencies();
 
         println!("Part 1: {}", a - b);
+
+        for _ in 0..30 {
+            self.polymerize();
+        }
+
+        let (a, b) = self.count_max_min_frequencies();
+
+        println!("Part 2: {}", a - b);
     }
 }
