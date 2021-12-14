@@ -93,10 +93,9 @@ impl Submarine {
             *frequency /= 2;
         });
 
-        let mut frequencies: Vec<u64> = element_frequencies.values().cloned().collect();
-        frequencies.sort_unstable_by(|a, b| b.cmp(a));
+        let frequencies: Vec<u64> = element_frequencies.values().cloned().collect();
 
-        (frequencies[0], *frequencies.last().unwrap())
+        (*frequencies.iter().max().unwrap(), *frequencies.iter().min().unwrap())
     }
 
     pub fn output(&mut self) {
