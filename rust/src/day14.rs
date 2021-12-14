@@ -84,7 +84,7 @@ impl Submarine {
             }
         }
 
-        // Adjusting the frequencies, making sure to keep the +1 for the starting and last elements.
+        // Adjusting the frequencies, making sure to add the +1 for the starting and last elements.
         element_frequencies.iter_mut().for_each(|(char, frequency)| {
             if self.polymer_template.starts_with(*char) || self.polymer_template.ends_with(*char) {
                 *frequency += 1;
@@ -93,9 +93,7 @@ impl Submarine {
             *frequency /= 2;
         });
 
-        let frequencies: Vec<u64> = element_frequencies.values().cloned().collect();
-
-        (*frequencies.iter().max().unwrap(), *frequencies.iter().min().unwrap())
+        (*element_frequencies.values().max().unwrap(), *element_frequencies.values().min().unwrap())
     }
 
     pub fn output(&mut self) {
