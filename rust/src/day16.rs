@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 enum PacketData {
-    Literal { value: u32 },
+    Literal { value: u64 },
     Operator { subpackets: Vec<Packet> },
 }
 
@@ -9,6 +9,47 @@ struct Packet {
     version: u8,
     type_id: u8,
     data: PacketData,
+}
+
+impl Packet {
+    pub fn evaluate(&self) -> usize {
+        if self.type_id == 4 {
+            if let PacketData::Literal { value } = self.data {
+                return value as usize;
+            } else {
+                panic!("Got a packet with type id == 4 but without literal data!");
+            }
+        }
+
+        let subpackets = if let PacketData::Operator { subpackets } = &self.data {
+            subpackets.iter().collect()
+        } else {
+            Vec::new()
+        };
+
+        match self.type_id {
+            0 => subpackets.into_iter().map(Packet::evaluate).sum(),
+            1 => subpackets.into_iter().map(Packet::evaluate).product(),
+            2 => subpackets.into_iter().map(Packet::evaluate).min().unwrap(),
+            3 => subpackets.into_iter().map(Packet::evaluate).max().unwrap(),
+            5 => if let [a, b] = subpackets[..] {
+                (a.evaluate() > b.evaluate()) as usize
+            } else {
+                panic!("Got a greater than packet without exactly 2 subpackets!")
+            }
+            6 => if let [a, b] = subpackets[..] {
+                (a.evaluate() < b.evaluate()) as usize
+            } else {
+                panic!("Got a less than packet without exactly 2 subpackets!")
+            }
+            7 => if let [a, b] = subpackets[..] {
+                (a.evaluate() == b.evaluate()) as usize
+            } else {
+                panic!("Got an equal to packet without exactly 2 subpackets!")
+            }
+            _ => panic!("Invalid packet type id!"),
+        }
+    }
 }
 
 struct Transmission {
@@ -63,11 +104,11 @@ impl<'a> Iterator for TransmissionIter<'a> {
         let type_id: u8 = self.transmission.next_bits(3);
 
         let return_packet = if type_id == 4 {
-            let mut literal: u32 = 0;
+            let mut literal: u64 = 0;
 
             loop {
                 let next_bit: u8 = self.transmission.next_bits(1);
-                literal = (literal << 4) | self.transmission.next_bits::<u32>(4);
+                literal = (literal << 4) | self.transmission.next_bits::<u64>(4);
 
                 if next_bit == 0 {
                     break;
@@ -188,6 +229,10 @@ impl Transmission {
 
     // Skips over any padding to realign the current bit position to a multiple of 8. Ensures that the padding that was skipped was all 0.
     fn realign_checked(&mut self) {
+        if self.current_bit_pos % 8 == 0 {
+            return;
+        }
+
         let bits_to_realign = 8 - (self.current_bit_pos % 8);
 
         let padding: usize = self.next_bits(bits_to_realign);
@@ -198,7 +243,7 @@ impl Transmission {
     }
 
     // Unchecked version of `realign_checked`.
-    fn realign(&mut self) {
+    fn _realign(&mut self) {
         self.current_bit_pos = self.current_bit_pos + (self.current_bit_pos % 8);
     }
 }
@@ -220,12 +265,15 @@ impl Submarine {
 
     pub fn output(&mut self) {
         let mut total_version_sum: usize = 0;
+        let mut outermost_packet_value = 0;
 
         for packet in self.transmission.iter_mut() {
             total_version_sum += version_sum(&packet);
+            outermost_packet_value = packet.evaluate();
         }
 
         println!("Part 1: {}", total_version_sum);
+        println!("Part 2: {}", outermost_packet_value);
     }
 }
 
