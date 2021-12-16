@@ -289,9 +289,7 @@ impl Submarine {
 }
 
 fn version_sum(packet: &Packet) -> usize {
-    let mut result = 0;
-
-    result += packet.version as usize;
+    let mut result = packet.version as usize;
 
     if let PacketData::Operator { subpackets } = &packet.data {
         for subpacket in subpackets.iter() {
