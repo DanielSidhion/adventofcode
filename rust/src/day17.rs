@@ -16,6 +16,7 @@ impl Submarine {
         let x_area: Vec<i32> = target_area.next().unwrap().split("..").map(|n| n.parse().unwrap()).collect();
         let y_area: Vec<i32> = target_area.next().unwrap().split("..").map(|n| n.parse().unwrap()).collect();
 
+        // The entire solution assumes that `0 <= x_area[0] <= x_area[1]` and that `y_area[0] <= y_area[1] <= 0`.
         self.target_area_x = (x_area[0], x_area[1]);
         self.target_area_y = (y_area[0], y_area[1]);
     }
