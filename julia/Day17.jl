@@ -20,6 +20,7 @@ function on_input!(s::Submarine, a::AbstractString)
     s.target_area_y = (y_area[1], y_area[2])
 end
 
+# This assumes that it will always be faster to reach the target area on the x axis, so we only need to worry about reaching the area in the y axis.
 function highest_y(s::Submarine)::Int32
     vy_max::Int32 = maximum(abs.(s.target_area_y))
 

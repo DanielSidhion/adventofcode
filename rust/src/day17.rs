@@ -21,6 +21,7 @@ impl Submarine {
         self.target_area_y = (y_area[0], y_area[1]);
     }
 
+    // This assumes that it will always be faster to reach the target area on the x axis, so we only need to worry about reaching the area in the y axis.
     fn highest_y(&self) -> i32 {
         let vy_max = self.target_area_y.0.abs().max(self.target_area_y.1.abs());
         (vy_max * (vy_max - 1)) / 2
