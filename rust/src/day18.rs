@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone)]
 struct Node {
     val: u32,
     depth: u32,
@@ -7,18 +7,21 @@ struct Node {
 }
 
 pub struct Submarine {
+    all_snail_numbers: Vec<Vec<Node>>,
     final_sum: Vec<Node>,
 }
 
 impl Submarine {
     pub fn new() -> Self {
         Self {
+            all_snail_numbers: Vec::new(),
             final_sum: Vec::new(),
         }
     }
 
     pub fn on_input(&mut self, result: &str) {
         let curr_snail_number = parse_snail_number(result);
+        self.all_snail_numbers.push(curr_snail_number.clone());
 
         if self.final_sum.len() == 0 {
             self.final_sum = curr_snail_number;
@@ -28,8 +31,35 @@ impl Submarine {
         }
     }
 
+    fn largest_magnitude(&self) -> u64 {
+        let mut result = 0;
+
+        for i in 0..self.all_snail_numbers.len() {
+            for j in i + 1..self.all_snail_numbers.len() {
+                let mut left = self.all_snail_numbers[i].clone();
+                let right = self.all_snail_numbers[j].clone();
+                add(&mut left, right);
+                reduce(&mut left);
+                let mag = magnitude(&left);
+
+                result = result.max(mag);
+
+                let left = self.all_snail_numbers[i].clone();
+                let mut right = self.all_snail_numbers[j].clone();
+                add(&mut right, left);
+                reduce(&mut right);
+                let mag = magnitude(&right);
+
+                result = result.max(mag);
+            }
+        }
+
+        result
+    }
+
     pub fn output(&mut self) {
         println!("Part 1: {}", magnitude(&self.final_sum));
+        println!("Part 2: {}", self.largest_magnitude());
     }
 }
 
