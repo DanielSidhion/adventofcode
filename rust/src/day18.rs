@@ -117,32 +117,20 @@ fn explode(s: &mut Vec<Node>) -> bool {
     let position_to_explode = s.windows(2).position(|win| win[0].depth() == win[1].depth() && win[0].depth() >= 5);
 
     if let Some(pos) = position_to_explode {
-        if pos == 0 {
-            s[0].val = 0;
-            // We're keeping the leftmost element of the pair, so we just need to decrease the left direction.
-            s[0].directions.0 -= 1;
-
-            let right = s.remove(1);
-
-            // Index is 1 because we just removed the right part of the pair.
-            s[1].val += right.val;
-        } else if pos == s.len() - 2 {
+        if pos > 0 {
             s[pos - 1].val += s[pos].val;
-            s[pos].val = 0;
-            // We're keeping the leftmost element of the pair, so we just need to decrease the left direction.
-            s[pos].directions.0 -= 1;
-            s.remove(pos + 1);
-        } else {
-            s[pos - 1].val += s[pos].val;
-            s[pos + 2].val += s[pos + 1].val;
-
-            // We're adding the new element on the position of the leftmost element of the pair, so we just need to decrease the left direction.
-            let new_element = [Node {
-                val: 0,
-                directions: (s[pos].directions.0 - 1, s[pos].directions.1)
-            }];
-            s.splice(pos..=pos + 1, new_element);
         }
+
+        if pos < s.len() - 2 {
+            s[pos + 2].val += s[pos + 1].val;
+        }
+
+        // We're adding the new element on the position of the leftmost element of the pair, so we just need to decrease the left direction.
+        let new_element = [Node {
+            val: 0,
+            directions: (s[pos].directions.0 - 1, s[pos].directions.1)
+        }];
+        s.splice(pos..=pos + 1, new_element);
 
         return true;
     }
