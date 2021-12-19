@@ -1,9 +1,14 @@
 #[derive(Clone)]
 struct Node {
     val: u32,
-    depth: u32,
     // How many times we went to the left and to the right (to count the magnitude later).
     directions: (u32, u32),
+}
+
+impl Node {
+    pub fn depth(&self) -> u32 {
+        self.directions.0 + self.directions.1
+    }
 }
 
 pub struct Submarine {
@@ -27,7 +32,6 @@ impl Submarine {
             self.final_sum = curr_snail_number;
         } else {
             add(&mut self.final_sum, curr_snail_number);
-            reduce(&mut self.final_sum);
         }
     }
 
@@ -35,20 +39,15 @@ impl Submarine {
         let mut result = 0;
 
         for i in 0..self.all_snail_numbers.len() {
-            for j in i + 1..self.all_snail_numbers.len() {
+            for j in 0..self.all_snail_numbers.len() {
+                if i == j {
+                    continue;
+                }
+
                 let mut left = self.all_snail_numbers[i].clone();
                 let right = self.all_snail_numbers[j].clone();
                 add(&mut left, right);
-                reduce(&mut left);
                 let mag = magnitude(&left);
-
-                result = result.max(mag);
-
-                let left = self.all_snail_numbers[i].clone();
-                let mut right = self.all_snail_numbers[j].clone();
-                add(&mut right, left);
-                reduce(&mut right);
-                let mag = magnitude(&right);
 
                 result = result.max(mag);
             }
@@ -66,8 +65,8 @@ impl Submarine {
 fn parse_snail_number(s: &str) -> Vec<Node> {
     let mut result = Vec::new();
 
-    let mut depth = 0;
-    let mut directions = vec![(0, 0)]; // (0, 0) is just a fake value to make directions work when parsing the first node.
+    // `directions.0` is how much we went on the left direction, `directions.1` is how much we went on the right direction.
+    let mut directions = (0, 0);
     let mut i: usize = 0;
 
     let sb = s.as_bytes();
@@ -76,28 +75,18 @@ fn parse_snail_number(s: &str) -> Vec<Node> {
 
     while i < sb.len() {
         match sb[i] as char {
-            '[' => {
-                depth += 1;
-                // Increasing depth, so we must also add to the directions vec.
-                let new_direction = *directions.last().unwrap();
-                directions.push((new_direction.0 + 1, new_direction.1));
-            },
-            ']' => {
-                depth -= 1;
-                // Decreasing depth, so pop from directions vec.
-                directions.pop();
-            },
+            '[' => directions.0 += 1,
+            ']' => directions.1 -= 1,
             ',' => {
                 // Finished parsing the node on the left and going to the right, so we'll change the directions.
-                let last = directions.last_mut().unwrap();
-                last.0 -= 1;
-                last.1 += 1;
+                directions.0 -= 1;
+                directions.1 += 1;
             },
             _ => { // Guaranteed to be the beginning of a number if the string is valid.
                 let num_end = i + s[i..].find(num_end_chars).unwrap();
                 let val = s[i..num_end].parse().unwrap();
 
-                result.push(Node { val, depth, directions: *directions.last().unwrap() });
+                result.push(Node { val, directions });
                 // Need to subtract 1 because we'll add 1 later.
                 i = num_end - 1;
             },
@@ -115,27 +104,21 @@ fn add(s: &mut Vec<Node>, mut t: Vec<Node>) {
     // The nodes from `t` will become the right side, so increase the right directions.
     t.iter_mut().for_each(|n| n.directions.1 += 1);
     s.append(&mut t);
-    s.iter_mut().for_each(|n| n.depth += 1);
+
+    reduce(s);
 }
 
 fn reduce(s: &mut Vec<Node>) {
-    loop {
-        if explode(s) {
-            continue;
-        }
-        if !split(s) {
-            break;
-        }
-    }
+    // Taking advantage of short-circuiting.
+    while explode(s) || split(s) {}
 }
 
 fn explode(s: &mut Vec<Node>) -> bool {
-    let position_to_explode = s.windows(2).position(|win| win[0].depth == win[1].depth && win[0].depth >= 5);
+    let position_to_explode = s.windows(2).position(|win| win[0].depth() == win[1].depth() && win[0].depth() >= 5);
 
     if let Some(pos) = position_to_explode {
         if pos == 0 {
             s[0].val = 0;
-            s[0].depth -= 1;
             // We're keeping the leftmost element of the pair, so we just need to decrease the left direction.
             s[0].directions.0 -= 1;
 
@@ -146,7 +129,6 @@ fn explode(s: &mut Vec<Node>) -> bool {
         } else if pos == s.len() - 2 {
             s[pos - 1].val += s[pos].val;
             s[pos].val = 0;
-            s[pos].depth -= 1;
             // We're keeping the leftmost element of the pair, so we just need to decrease the left direction.
             s[pos].directions.0 -= 1;
             s.remove(pos + 1);
@@ -155,7 +137,10 @@ fn explode(s: &mut Vec<Node>) -> bool {
             s[pos + 2].val += s[pos + 1].val;
 
             // We're adding the new element on the position of the leftmost element of the pair, so we just need to decrease the left direction.
-            let new_element = [Node { val: 0, depth: s[pos].depth - 1, directions: (s[pos].directions.0 - 1, s[pos].directions.1) }];
+            let new_element = [Node {
+                val: 0,
+                directions: (s[pos].directions.0 - 1, s[pos].directions.1)
+            }];
             s.splice(pos..=pos + 1, new_element);
         }
 
@@ -169,8 +154,14 @@ fn split(s: &mut Vec<Node>) -> bool {
     let position_to_split = s.iter().position(|n| n.val >= 10);
 
     if let Some(pos) = position_to_split {
-        let left = Node { val: s[pos].val / 2, depth: s[pos].depth + 1, directions: (s[pos].directions.0 + 1, s[pos].directions.1) };
-        let right = Node { val: (s[pos].val + 1) / 2, depth: s[pos].depth + 1, directions: (s[pos].directions.0, s[pos].directions.1 + 1) };
+        let left = Node {
+            val: s[pos].val / 2,
+            directions: (s[pos].directions.0 + 1, s[pos].directions.1)
+        };
+        let right = Node {
+            val: (s[pos].val + 1) / 2,
+            directions: (s[pos].directions.0, s[pos].directions.1 + 1)
+        };
         let new_elements = [left, right];
 
         s.splice(pos..=pos, new_elements);
