@@ -37,9 +37,9 @@ impl Submarine {
     }
 
     // Returns the number of positions to move forward after all the complete rotations around the board.
-    fn roll_d100(&mut self) -> u8 {
-        let res = 1 + (self.d100_rolls % 100);
-        self.d100_rolls += 1;
+    fn d100_sum(&mut self) -> u8 {
+        let res = (6 + 3 * self.d100_rolls) % 100;
+        self.d100_rolls += 3;
         (res % 10) as u8
     }
 
@@ -47,7 +47,7 @@ impl Submarine {
         let mut universe = Universe::new(self.starting_positions.clone(), [0, 0]);
 
         loop {
-            universe.positions[universe.next_player] += self.roll_d100() + self.roll_d100() + self.roll_d100();
+            universe.positions[universe.next_player] += self.d100_sum();
             universe.positions[universe.next_player] %= 10;
             universe.scores[universe.next_player] += (1 + universe.positions[universe.next_player]) as u16;
 
@@ -112,7 +112,7 @@ fn generate_dirac_universes(num_rolls: usize) -> Vec<u64> {
     let total_sum_possibilities = num_rolls * 2 + 1;
     let mut result = vec![0; total_sum_possibilities];
 
-    add_dirac_possibility(num_rolls as u64, 3, 0, &mut result);
+    add_dirac_possibility(num_rolls as u64, num_rolls, 0, &mut result);
 
     result
 }
