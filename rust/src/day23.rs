@@ -45,7 +45,7 @@ fn min_cost_to_solve(hallway: &Vec<char>, rooms: &Vec<Vec<char>>, mut curr_cost:
     }
 
     for i in 0..4 {
-        for j in 0..2 {
+        for j in 0..4 {
             if let amphipod @ 'A'..='D' = rooms[i][j] {
                 let amphipod_room = room(amphipod);
 
@@ -54,9 +54,9 @@ fn min_cost_to_solve(hallway: &Vec<char>, rooms: &Vec<Vec<char>>, mut curr_cost:
                 }
 
                 let positions_moved = if i < amphipod_room {
-                    (amphipod_room - i) * 2 + 1 + 1 + 1 - j
+                    (amphipod_room - i) * 2 + 1 + 1 + 3 - j
                 } else {
-                    (i - amphipod_room) * 2 + 1 + 1 + 1 - j
+                    (i - amphipod_room) * 2 + 1 + 1 + 3 - j
                 };
 
                 curr_cost += positions_moved * step_cost(amphipod);
@@ -75,20 +75,36 @@ pub struct Submarine {
 
 impl Submarine {
     pub fn new() -> Self {
-        Self {
+        let mut result = Self {
             curr_line_read: 0,
             hallway: vec!['.'; 11],
-            rooms: vec![vec!['.', '.']; 4],
-        }
+            rooms: vec![vec!['.', '.', '.', '.']; 4],
+        };
+
+        result.rooms[0][1] = 'D';
+        result.rooms[1][1] = 'B';
+        result.rooms[2][1] = 'A';
+        result.rooms[3][1] = 'C';
+        result.rooms[0][2] = 'D';
+        result.rooms[1][2] = 'C';
+        result.rooms[2][2] = 'B';
+        result.rooms[3][2] = 'A';
+
+        result
     }
 
     pub fn on_input(&mut self, result: &str) {
         self.curr_line_read += 1;
 
-        if self.curr_line_read == 3 || self.curr_line_read == 4 {
-            let amphipods: Vec<_> = result.split(&['#', ' '][..]).filter(|c| !c.is_empty()).collect();
+        let amphipods: Vec<_> = result.split(&['#', ' '][..]).filter(|c| !c.is_empty()).collect();
+
+        if self.curr_line_read == 3 {
             for i in 0..4 {
-                self.rooms[i][4 - self.curr_line_read] = amphipods[i].chars().next().unwrap();
+                self.rooms[i][3] = amphipods[i].chars().next().unwrap();
+            }
+        } else if self.curr_line_read == 4 {
+            for i in 0..4 {
+                self.rooms[i][0] = amphipods[i].chars().next().unwrap();
             }
         }
     }
@@ -118,13 +134,13 @@ impl Submarine {
 
             // First we attempt moving amphipods out of their rooms if they should be moved.
             for i in 0..4 {
-                for j in (0..2).rev() {
+                for j in (0..4).rev() {
                     if let amphipod @ 'A'..='D' = rooms[i][j] {
                         // There's an amphipod in the room, let's check if it should be moved.
                         let is_in_room = room(amphipod) == i;
-                        let is_neighbor_in_room = room(rooms[i][0]) == i; // Neighbor is always the one in the bottom.
+                        let are_neighbors_in_room = (0..j).all(|k| room(rooms[i][k]) == i); // Neighbors are always on the bottom of current one.
 
-                        if is_in_room && is_neighbor_in_room {
+                        if is_in_room && are_neighbors_in_room {
                             // No need to move this room.
                             break;
                         }
@@ -144,7 +160,7 @@ impl Submarine {
                             // Temporarily add this amphipod so we can clone the hallway and push it to a configuration to try.
                             hallway[k] = amphipod;
 
-                            let positions_moved = (k - curr_hallway_pos) + (2 - j); // (cost to move along hallway) + (cost to go from room to hallway).
+                            let positions_moved = (k - curr_hallway_pos) + (4 - j); // (cost to move along hallway) + (cost to go from room to hallway).
                             let new_cost = cost + positions_moved * step_cost(amphipod);
 
                             possible_configurations.push((hallway.clone(), rooms.clone(), new_cost));
@@ -163,7 +179,7 @@ impl Submarine {
                             // Temporarily add this amphipod so we can clone the hallway and push it to a configuration to try.
                             hallway[k] = amphipod;
 
-                            let positions_moved = (curr_hallway_pos - k) + (2 - j); // (cost to move along hallway) + (cost to go from room to hallway).
+                            let positions_moved = (curr_hallway_pos - k) + (4 - j); // (cost to move along hallway) + (cost to go from room to hallway).
                             let new_cost = cost + positions_moved * step_cost(amphipod);
 
                             possible_configurations.push((hallway.clone(), rooms.clone(), new_cost));
@@ -185,9 +201,9 @@ impl Submarine {
                 if let amphipod @ 'A'..='D' = hallway[i] {
                     let amphipod_room = room(amphipod);
 
-                    hallway[i] = '.';
+                    let room_has_same_amphipods = (0..4).all(|j| rooms[amphipod_room][j] == '.' || rooms[amphipod_room][j] == amphipod);
 
-                    if rooms[amphipod_room][1] == '.' && (rooms[amphipod_room][0] == '.' || rooms[amphipod_room][0] == amphipod) {
+                    if rooms[amphipod_room][3] == '.' && room_has_same_amphipods {
                         // Amphipod can move into the room, check if path on hallway is available too.
                         let room_hallway_pos = 2 + amphipod_room * 2;
                         let mut path = if i < room_hallway_pos {
@@ -203,23 +219,23 @@ impl Submarine {
                             continue;
                         }
 
-                        let room_pos = if rooms[amphipod_room][0] == '.' { 0 } else { 1 };
+                        let room_pos = (0..4).filter(|j| rooms[amphipod_room][*j] == '.').min().unwrap();
                         let positions_moved = if i < room_hallway_pos {
-                            (room_hallway_pos - i) + (2 - room_pos)
+                            (room_hallway_pos - i) + (4 - room_pos)
                         } else {
-                            (i - room_hallway_pos) + (2 - room_pos)
+                            (i - room_hallway_pos) + (4 - room_pos)
                         };
 
                         let new_cost = cost + positions_moved * step_cost(amphipod);
 
+                        hallway[i] = '.';
                         rooms[amphipod_room][room_pos] = amphipod;
 
                         possible_configurations.push((hallway.clone(), rooms.clone(), new_cost));
 
                         rooms[amphipod_room][room_pos] = '.';
+                        hallway[i] = amphipod;
                     }
-
-                    hallway[i] = amphipod;
                 }
             }
 
@@ -232,7 +248,9 @@ impl Submarine {
     fn print_room(&self) {
         println!("#############");
         println!("#{}#", self.hallway.iter().collect::<String>());
-        println!("###{}#{}#{}#{}###", self.rooms[0][1], self.rooms[1][1], self.rooms[2][1], self.rooms[3][1]);
+        println!("###{}#{}#{}#{}###", self.rooms[0][3], self.rooms[1][3], self.rooms[2][3], self.rooms[3][3]);
+        println!("  #{}#{}#{}#{}#  ", self.rooms[0][2], self.rooms[1][2], self.rooms[2][2], self.rooms[3][2]);
+        println!("  #{}#{}#{}#{}#  ", self.rooms[0][1], self.rooms[1][1], self.rooms[2][1], self.rooms[3][1]);
         println!("  #{}#{}#{}#{}#  ", self.rooms[0][0], self.rooms[1][0], self.rooms[2][0], self.rooms[3][0]);
         println!("  #########  ");
     }
@@ -240,6 +258,7 @@ impl Submarine {
     pub fn output(&mut self) {
         self.print_room();
 
-        println!("Part 1: {}", self.smallest_organization_energy());
+        println!("Part 2: {}", self.smallest_organization_energy());
+        println!("{}", usize::MAX);
     }
 }
