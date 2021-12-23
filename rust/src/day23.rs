@@ -165,16 +165,14 @@ impl Submarine {
             }
 
             let mut new_burrow = burrow.clone();
-            let Burrow { hallway, rooms } = &mut new_burrow;
 
-            let amphipod = rooms[room][room_height];
-
-            rooms[room][room_height] = -1;
-            hallway[hallway_pos] = amphipod;
+            let amphipod = new_burrow.rooms[room][room_height];
+            new_burrow.rooms[room][room_height] = -1;
+            new_burrow.hallway[hallway_pos] = amphipod;
 
             let room_hallway_pos = 2 + room * 2;
 
-            let positions_moved = (room_hallway_pos as i32 - hallway_pos as i32).abs() + (room_height as i32 + 1); // (cost to move along hallway) + (cost to go from room to hallway).
+            let positions_moved = (room_hallway_pos as i32 - hallway_pos as i32).abs() + (room_height as i32 + 1); // (positions moved along hallway) + (positions to go from room to hallway).
             let new_cost = curr_cost + positions_moved * STEP_COST[amphipod as usize];
 
             self.add_burrow_to_explore(new_burrow, new_cost);
@@ -194,11 +192,11 @@ impl Submarine {
 
                 // Found an amphipod in the room, let's check if it should be moved.
                 let in_correct_room = val == room_val as i8;
-                // Neighbors are considered as amphipods below the current one.
+                // Neighbors are considered as all the amphipods below the current one.
                 let neighbors_in_correct_room = (j + 1..burrow.room_size()).all(|k| room[k] == room_val as i8);
 
                 if in_correct_room && neighbors_in_correct_room {
-                    // All amphipods belong here. No need to move this room.
+                    // All amphipods belong here. No need to move anything from this room.
                     break;
                 }
 
@@ -210,7 +208,7 @@ impl Submarine {
                     burrow,
                     curr_cost,
                     (room_val, j),
-            (curr_hallway_pos + 1..=9).step_by(2).chain(iter::once(10))
+                    (curr_hallway_pos + 1..=9).step_by(2).chain(iter::once(10))
                 );
 
                 // From current hallway position to the beginning.
@@ -218,7 +216,7 @@ impl Submarine {
                     burrow,
                     curr_cost,
                     (room_val, j),
-            iter::once(0).chain((1..curr_hallway_pos).step_by(2)).rev()
+                    iter::once(0).chain((1..curr_hallway_pos).step_by(2)).rev()
                 );
 
                 // We already moved an amphipod from this room, so don't move the other one in this run.
@@ -234,16 +232,19 @@ impl Submarine {
             }
 
             let Burrow { hallway, rooms } = burrow;
+            // Given the current amphipod value, let's check if we can move it to the room it belongs to.
             let val = hallway[i];
+            let room_to_move = &rooms[val as usize];
 
-            let room_has_same_amphipods = (0..burrow.room_size()).all(|j| rooms[val as usize][j] < 0 || rooms[val as usize][j] == val);
+            let room_has_same_amphipods = (0..burrow.room_size()).all(|j| room_to_move[j] < 0 || room_to_move[j] == val);
 
             if !room_has_same_amphipods {
                 // Can't move to the room yet.
                 continue;
             }
 
-            let room_pos = (0..burrow.room_size()).filter(|j| rooms[val as usize][*j] < 0).max();
+            // Will give us the bottom-most position that can be filled in the room.
+            let room_pos = (0..burrow.room_size()).filter(|j| room_to_move[*j] < 0).max();
 
             if room_pos == None {
                 // There's no space in the room.
@@ -266,9 +267,9 @@ impl Submarine {
             }
 
             let room_pos = room_pos.unwrap();
-            let positions_moved = (room_hallway_pos as i32 - i as i32).abs() + 1 + room_pos as i32;
+            let positions_moved = (room_hallway_pos as i32 - i as i32).abs() + (1 + room_pos as i32); // (positions moved along hallway) + (positions to move into the room).
 
-            let new_cost = curr_cost + (positions_moved as i32) * STEP_COST[val as usize];
+            let new_cost = curr_cost + positions_moved * STEP_COST[val as usize];
 
             let mut new_burrow = burrow.clone();
             new_burrow.hallway[i] = -1;
