@@ -8,7 +8,7 @@
 //   - If the comparison succeeds, the MONAD doesn't do anything else.
 //   - If the comparison does not succeed, the MONAD adds the (input number + NUMBER2) to `z`.
 //
-// Based on these observations, it can be noted that the MONAD is essentially building a number in base 26 and storing that in `z`, but sometimes it removes some digits from the number it's building (only happens when there's that NEGATIVE_NUMBER and the check succeeds).
+// Based on these observations, it can be noted that the MONAD is essentially building a number in base 26 and storing that in `z`, but sometimes it removes the last digit from the number it's building (only happens when there's that NEGATIVE_NUMBER and the check succeeds).
 // There are 14 inputs (the digit of the model number). The MONAD uses CASE 1 for 7 numbers, and CASE 2 for 7 other numbers.
 // For the MONAD to output "valid", `z` must be 0 at the end, which means that for all CASE 2 inputs, the check must succeed.
 //
