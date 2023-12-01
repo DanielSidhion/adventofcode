@@ -29,7 +29,7 @@ pub fn day01_1(input: []const u8) !u64 {
     return result;
 }
 
-fn starts_with(input: []const u8, text: []const u8) bool {
+fn startsWith(input: []const u8, text: []const u8) bool {
     return std.mem.eql(u8, input[0..@min(text.len, input.len)], text);
 }
 
@@ -54,7 +54,7 @@ pub fn day01_2(input: []const u8) !u64 {
     var curr_index: usize = 0;
     input_parsing: while (curr_index < input.len) : (curr_index += 1) {
         for (replacements) |repl| {
-            if (starts_with(input[curr_index..], repl[0])) {
+            if (startsWith(input[curr_index..], repl[0])) {
                 try parsed_input.append(repl[1]);
                 continue :input_parsing;
             }
