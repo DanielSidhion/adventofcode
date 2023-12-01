@@ -76,13 +76,13 @@ test "example 1" {
     ;
 
     const output = try day01_1(input);
-    try std.testing.expectEqual(output, 142);
+    try std.testing.expectEqual(@as(u64, 142), output);
 }
 
 test "input 1" {
     const input = @embedFile("./input01");
     const output = try day01_1(input);
-    try std.testing.expectEqual(output, 55621);
+    try std.testing.expectEqual(@as(u64, 55621), output);
 }
 
 test "example 2" {
@@ -98,11 +98,11 @@ test "example 2" {
     ;
 
     const output = try day01_2(input);
-    try std.testing.expectEqual(output, 281);
+    try std.testing.expectEqual(@as(u64, 281), output);
 }
 
 test "input 2" {
     const input = @embedFile("./input01");
     const output = try day01_2(input);
-    try std.testing.expectEqual(output, 53592);
+    try std.testing.expectEqual(@as(u64, 53592), output);
 }
