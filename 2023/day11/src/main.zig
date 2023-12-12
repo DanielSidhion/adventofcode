@@ -1,8 +1,45 @@
+// Note: for this day I decided to just remove the code I used to solve part 1 and use the code for part 2 to solve both parts. If you want to see the code I created exclusively for part 1 (while I was solving it), check the commit history.
+
 const std = @import("std");
 
-const Position = struct { x: isize, y: isize };
+const Position = struct { x: usize, y: usize };
 
-pub fn day11_1(input: []const u8) !u32 {
+// For debugging.
+fn printUniverse(grid: *std.ArrayList(std.ArrayList(u8))) void {
+    for (grid.items) |line| {
+        std.debug.print("{s}\n", .{line.items});
+    }
+}
+
+fn printExpansions(expansions: []bool) void {
+    for (expansions) |e| {
+        const char_to_print: u8 = if (e) 1 else 0;
+        std.debug.print("{d} ", .{char_to_print});
+    }
+    std.debug.print("\n", .{});
+}
+
+fn printPositions(positions: []Position) void {
+    std.debug.print("Positions: ", .{});
+
+    for (positions) |pos| {
+        std.debug.print("({d},{d}) ", .{ pos.x, pos.y });
+    }
+
+    std.debug.print("\n", .{});
+}
+
+fn findPositions(grid: *std.ArrayList(std.ArrayList(u8)), positions_list: *std.ArrayList(Position)) !void {
+    for (grid.items, 0..) |line, y| {
+        for (line.items, 0..) |char, x| {
+            if (char == '#') {
+                try positions_list.append(Position{ .x = x, .y = y });
+            }
+        }
+    }
+}
+
+pub fn day11(input: []const u8, expansion_scale: usize) !u64 {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
@@ -19,77 +56,65 @@ pub fn day11_1(input: []const u8) !u32 {
         try grid.append(line_list);
     }
 
-    try expandUniverse(&grid, arena.allocator());
+    var horizontal_expansions = std.ArrayList(bool).init(arena.allocator());
+    var vertical_expansions = std.ArrayList(bool).init(arena.allocator());
+
+    try countExpansions(&grid, &horizontal_expansions, &vertical_expansions);
 
     var positions = std.ArrayList(Position).init(arena.allocator());
     try findPositions(&grid, &positions);
 
-    var result: u32 = 0;
+    var result: u64 = 0;
 
     for (0..positions.items.len) |i| {
+        const galaxy_a = positions.items[i];
+
         for (i + 1..positions.items.len) |j| {
-            const distX = positions.items[i].x - positions.items[j].x;
-            const distY = positions.items[i].y - positions.items[j].y;
+            const galaxy_b = positions.items[j];
 
-            // Couldn't find a math.abs in Zig v0.11, rip.
-            var dist = if (distX < 0) -distX else distX;
-            dist += if (distY < 0) -distY else distY;
+            var distX: u64 = 0;
+            if (galaxy_a.x < galaxy_b.x) {
+                for (galaxy_a.x..galaxy_b.x) |x| {
+                    distX += if (horizontal_expansions.items[x]) expansion_scale else 1;
+                }
+            } else {
+                for (galaxy_b.x..galaxy_a.x) |x| {
+                    distX += if (horizontal_expansions.items[x]) expansion_scale else 1;
+                }
+            }
+            var distY: u64 = 0;
+            if (galaxy_a.y < galaxy_b.y) {
+                for (galaxy_a.y..galaxy_b.y) |y| {
+                    distY += if (vertical_expansions.items[y]) expansion_scale else 1;
+                }
+            } else {
+                for (galaxy_b.y..galaxy_a.y) |y| {
+                    distY += if (vertical_expansions.items[y]) expansion_scale else 1;
+                }
+            }
 
-            result += @truncate(@as(usize, @intCast(dist)));
+            result += distX + distY;
         }
     }
 
     return result;
 }
 
-// For debugging.
-fn printUniverse(grid: *std.ArrayList(std.ArrayList(u8))) void {
-    for (grid.items) |line| {
-        std.debug.print("{s}\n", .{line.items});
-    }
-}
-
-fn expandUniverse(grid: *std.ArrayList(std.ArrayList(u8)), allocator: std.mem.Allocator) !void {
-    var x: usize = 0;
-
-    while (x < grid.items[0].items.len) : (x += 1) {
-        var empty_column = for (0..grid.items.len) |y| {
+fn countExpansions(grid: *std.ArrayList(std.ArrayList(u8)), horizontal_expansions: *std.ArrayList(bool), vertical_expansions: *std.ArrayList(bool)) !void {
+    for (0..grid.items[0].items.len) |x| {
+        const empty_column = for (0..grid.items.len) |y| {
             if (grid.items[y].items[x] == '#') {
                 break false;
             }
         } else true;
 
-        if (empty_column) {
-            for (0..grid.items.len) |y| {
-                try grid.items[y].insert(x, '.');
-            }
-            // Must skip this new empty column, otherwise we'll duplicate it again.
-            x += 1;
-        }
+        try horizontal_expansions.append(empty_column);
     }
 
-    var y: usize = 0;
-
-    while (y < grid.items.len) : (y += 1) {
+    for (0..grid.items.len) |y| {
         const empty_row = std.mem.allEqual(u8, grid.items[y].items, '.');
 
-        if (empty_row) {
-            var new_line = std.ArrayList(u8).init(allocator);
-            try new_line.appendSlice(grid.items[y].items);
-            try grid.insert(y, new_line);
-            // Again, must skip to avoid duplicating the row again.
-            y += 1;
-        }
-    }
-}
-
-fn findPositions(grid: *std.ArrayList(std.ArrayList(u8)), positions_list: *std.ArrayList(Position)) !void {
-    for (grid.items, 0..) |line, y| {
-        for (line.items, 0..) |char, x| {
-            if (char == '#') {
-                try positions_list.append(Position{ .x = @intCast(x), .y = @intCast(y) });
-            }
-        }
+        try vertical_expansions.append(empty_row);
     }
 }
 
@@ -108,12 +133,56 @@ test "example 1" {
         \\
     ;
 
-    const output = try day11_1(input);
-    try std.testing.expectEqual(@as(u32, 374), output);
+    const output = try day11(input, 2);
+    try std.testing.expectEqual(@as(u64, 374), output);
 }
 
 test "input 1" {
     const input = @embedFile("./input11");
-    const output = try day11_1(input);
-    try std.testing.expectEqual(@as(u32, 10292708), output);
+    const output = try day11(input, 2);
+    try std.testing.expectEqual(@as(u64, 10292708), output);
+}
+
+test "example 2" {
+    const input =
+        \\...#......
+        \\.......#..
+        \\#.........
+        \\..........
+        \\......#...
+        \\.#........
+        \\.........#
+        \\..........
+        \\.......#..
+        \\#...#.....
+        \\
+    ;
+
+    const output = try day11(input, 10);
+    try std.testing.expectEqual(@as(u64, 1030), output);
+}
+
+test "example 3" {
+    const input =
+        \\...#......
+        \\.......#..
+        \\#.........
+        \\..........
+        \\......#...
+        \\.#........
+        \\.........#
+        \\..........
+        \\.......#..
+        \\#...#.....
+        \\
+    ;
+
+    const output = try day11(input, 100);
+    try std.testing.expectEqual(@as(u64, 8410), output);
+}
+
+test "input 2" {
+    const input = @embedFile("./input11");
+    const output = try day11(input, 1_000_000);
+    try std.testing.expectEqual(@as(u64, 790194712336), output);
 }
